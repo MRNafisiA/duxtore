@@ -1,0 +1,2 @@
+# duxtore
+Boilerplate for Redux
