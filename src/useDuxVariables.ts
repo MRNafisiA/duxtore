@@ -1,6 +1,6 @@
-import { Dux, CommonObjectState } from './dux';
 import { useSelector } from 'react-redux';
 import Variable, { GetVariablesOfState } from './Variable';
+import { Dux, CommonObjectState, CommonSimpleState } from './dux';
 
 const useDuxVariables = <S extends CommonObjectState>(
     dux: Dux<S>,
@@ -16,12 +16,12 @@ const useDuxVariables = <S extends CommonObjectState>(
         ])
     );
 
-const useSimpleDuxVariables = <S extends CommonObjectState>(
+const useSimpleDuxVariables = <S extends CommonSimpleState>(
     dux: Dux<S>,
     selector: (rootState: never) => S
 ): Variable<S> => ({
     v: useSelector(selector),
-    set: dux.setFunctions.set as unknown as Variable<S>['set']
+    set: dux.setFunctions.set as Variable<S>['set']
 });
 
 export default useDuxVariables;
