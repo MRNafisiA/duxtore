@@ -1,5 +1,5 @@
-import useDuxVariables from './useDuxVariables';
 import dispatchContainer, { initDispatch } from './dispatch';
+import useDuxVariables, { useSimpleDuxVariables } from './useDuxVariables';
 import Variable, {
     GetValuesOfVariables,
     GetVariablesOfState,
@@ -28,7 +28,7 @@ export {
     createReducersByState,
     createSetFunctionsByActions
 };
-export { useDuxVariables };
+export { useDuxVariables, useSimpleDuxVariables };
 export type {
     Variable,
     GetVariableType,
