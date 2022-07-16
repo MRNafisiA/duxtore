@@ -37,9 +37,7 @@ const simpleDux = <S extends CommonSimpleState>(
         initialState,
         reducers: {
             // @ts-ignore
-            set: (state, action) => {
-                state = action.payload;
-            }
+            set: (state, action) => action.payload
         }
     });
     return {
