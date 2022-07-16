@@ -30,7 +30,7 @@ const dux = <S extends CommonObjectState>(
 
 const simpleDux = <S extends CommonSimpleState>(
     name: string,
-    initialState: S
+    initialState: S | (() => S)
 ): Dux<S> => {
     const slice = createSlice({
         name,
@@ -51,7 +51,7 @@ const simpleDux = <S extends CommonSimpleState>(
 };
 
 const createReducersByState = <S extends CommonObjectState>(
-    initialState: S
+    initialState: S | (() => S)
 ): {
     [key in keyof S]: (state: Draft<S>, action: PayloadAction<S[key]>) => void;
 } =>
