@@ -1,30 +1,44 @@
-import dispatchContainer from './dispatch';
-import { createSlice, Draft, PayloadAction, Slice } from '@reduxjs/toolkit';
+import dispatchContainer, { DispatchContainer } from './dispatch';
+import {
+    AnyAction,
+    createSlice,
+    Draft,
+    PayloadAction,
+    Slice
+} from '@reduxjs/toolkit';
 
 type CommonObjectState = Record<string, unknown>;
 type CommonSimpleState = unknown;
-type Actions = Record<string, (payload: any) => Record<string, unknown>>;
+type Actions = Record<string, (payload: any) => AnyAction>;
 type SetFunctions<A extends Actions> = {
     [key in keyof A]: (value: A[key]) => void;
 };
 type Dux<S extends CommonObjectState | CommonSimpleState> = {
     slice: Slice<S>;
     setFunctions: SetFunctions<Slice<S>['actions']>;
+    dispatchContainer: DispatchContainer;
 };
 
 const dux = <S extends CommonObjectState>(
     name: string,
     initialState: S
 ): Dux<S> => {
+    const customDispatchContainer = {
+        value: dispatchContainer.value
+    } as unknown as DispatchContainer;
     const slice = createSlice({
         name,
         initialState,
         reducers: createReducersByState(initialState)
     });
-    const setFunctions = createSetFunctionsByActions(slice.actions);
+    const setFunctions = createSetFunctionsByActions(
+        slice.actions,
+        customDispatchContainer
+    );
     return {
         slice,
-        setFunctions
+        setFunctions,
+        dispatchContainer: customDispatchContainer
     };
 };
 
@@ -32,6 +46,9 @@ const simpleDux = <S extends CommonSimpleState>(
     name: string,
     initialState: S | (() => S)
 ): Dux<S> => {
+    const customDispatchContainer = {
+        value: dispatchContainer.value
+    } as unknown as DispatchContainer;
     const slice = createSlice({
         name,
         initialState,
@@ -44,9 +61,10 @@ const simpleDux = <S extends CommonSimpleState>(
         slice,
         setFunctions: {
             set: value => {
-                dispatchContainer.value(slice.actions.set(value));
+                customDispatchContainer.value(slice.actions.set(value));
             }
-        }
+        },
+        dispatchContainer: customDispatchContainer
     };
 };
 
@@ -66,7 +84,8 @@ const createReducersByState = <S extends CommonObjectState>(
     );
 
 const createSetFunctionsByActions = <A extends Actions>(
-    actions: A
+    actions: A,
+    dispatchContainer: DispatchContainer
 ): SetFunctions<A> =>
     Object.fromEntries(
         Object.entries(actions).map(([key, action]) => [
