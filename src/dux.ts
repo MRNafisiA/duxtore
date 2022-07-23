@@ -23,9 +23,7 @@ const dux = <S extends CommonObjectState>(
     name: string,
     initialState: S
 ): Dux<S> => {
-    const customDispatchContainer = {
-        value: dispatchContainer.value
-    } as unknown as DispatchContainer;
+    const customDispatchContainer = dispatchContainer;
     const slice = createSlice({
         name,
         initialState,
@@ -46,9 +44,7 @@ const simpleDux = <S extends CommonSimpleState>(
     name: string,
     initialState: S | (() => S)
 ): Dux<S> => {
-    const customDispatchContainer = {
-        value: dispatchContainer.value
-    } as unknown as DispatchContainer;
+    const customDispatchContainer = dispatchContainer;
     const slice = createSlice({
         name,
         initialState,
