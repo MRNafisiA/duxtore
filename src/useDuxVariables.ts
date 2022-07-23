@@ -6,10 +6,7 @@ import { Dux, CommonObjectState, CommonSimpleState } from './dux';
 const useDuxVariables = <S extends CommonObjectState>(
     dux: Dux<S>,
     selector: (rootState: never) => S,
-    {
-        useSelector = defaultUseSelector,
-        dispatch
-    }: {
+    { useSelector = defaultUseSelector, dispatch } = {} as {
         useSelector?: (selector: (rootState: never) => S) => S;
         dispatch?: Dispatch;
     }
@@ -31,10 +28,7 @@ const useDuxVariables = <S extends CommonObjectState>(
 const useSimpleDuxVariables = <S extends CommonSimpleState>(
     dux: Dux<S>,
     selector: (rootState: never) => S,
-    {
-        useSelector = defaultUseSelector,
-        dispatch
-    }: {
+    { useSelector = defaultUseSelector, dispatch } = {} as {
         useSelector?: (selector: (rootState: never) => S) => S;
         dispatch?: Dispatch;
     }
