@@ -2,16 +2,20 @@ import { Dispatch } from '@reduxjs/toolkit';
 import Variable, { GetVariablesOfState } from './Variable';
 import { useSelector as defaultUseSelector } from 'react-redux';
 import { Dux, CommonObjectState, CommonSimpleState } from './dux';
+import dispatchContainer from './dispatch';
 
 const useDuxVariables = <S extends CommonObjectState>(
     dux: Dux<S>,
     selector: (rootState: any) => S,
-    { useSelector = defaultUseSelector, dispatch } = {} as {
+    {
+        useSelector = defaultUseSelector,
+        dispatch = dispatchContainer.value
+    } = {} as {
         useSelector?: (selector: (rootState: any) => S) => S;
         dispatch?: Dispatch;
     }
 ): GetVariablesOfState<S> => {
-    if (dispatch !== undefined) {
+    if (dux.dispatchContainer.value !== dispatch) {
         dux.dispatchContainer.value = dispatch;
     }
     return Object.fromEntries(
@@ -28,12 +32,15 @@ const useDuxVariables = <S extends CommonObjectState>(
 const useSimpleDuxVariables = <S extends CommonSimpleState>(
     dux: Dux<S>,
     selector: (rootState: any) => S,
-    { useSelector = defaultUseSelector, dispatch } = {} as {
+    {
+        useSelector = defaultUseSelector,
+        dispatch = dispatchContainer.value
+    } = {} as {
         useSelector?: (selector: (rootState: any) => S) => S;
         dispatch?: Dispatch;
     }
 ): Variable<S> => {
-    if (dispatch !== undefined) {
+    if (dux.dispatchContainer.value !== dispatch) {
         dux.dispatchContainer.value = dispatch;
     }
     return {

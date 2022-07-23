@@ -1,4 +1,4 @@
-import dispatchContainer, { DispatchContainer } from './dispatch';
+import { DispatchContainer } from './dispatch';
 import {
     AnyAction,
     createSlice,
@@ -23,7 +23,9 @@ const dux = <S extends CommonObjectState>(
     name: string,
     initialState: S
 ): Dux<S> => {
-    const customDispatchContainer = { ...dispatchContainer };
+    const customDispatchContainer = {
+        value: undefined
+    } as unknown as DispatchContainer;
     const slice = createSlice({
         name,
         initialState,
@@ -44,7 +46,9 @@ const simpleDux = <S extends CommonSimpleState>(
     name: string,
     initialState: S | (() => S)
 ): Dux<S> => {
-    const customDispatchContainer = { ...dispatchContainer };
+    const customDispatchContainer = {
+        value: undefined
+    } as unknown as DispatchContainer;
     const slice = createSlice({
         name,
         initialState,
