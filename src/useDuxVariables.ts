@@ -1,8 +1,8 @@
+import dispatchContainer from './dispatch';
 import { Dispatch } from '@reduxjs/toolkit';
 import Variable, { GetVariablesOfState } from './Variable';
 import { useSelector as defaultUseSelector } from 'react-redux';
 import { Dux, CommonObjectState, CommonSimpleState } from './dux';
-import dispatchContainer from './dispatch';
 
 const useDuxVariables = <S extends CommonObjectState>(
     dux: Dux<S>,
@@ -18,11 +18,12 @@ const useDuxVariables = <S extends CommonObjectState>(
     if (dux.dispatchContainer.value !== dispatch) {
         dux.dispatchContainer.value = dispatch;
     }
+    const data = useSelector(selector);
     return Object.fromEntries(
-        Object.entries(useSelector(selector)).map(([key, val]) => [
+        Object.keys(dux.slice.actions).map(key => [
             key as unknown,
             {
-                v: val,
+                v: data[key],
                 set: dux.setFunctions[key]
             }
         ])

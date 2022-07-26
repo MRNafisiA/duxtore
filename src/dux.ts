@@ -7,8 +7,8 @@ import {
     Slice
 } from '@reduxjs/toolkit';
 
-type CommonObjectState = Record<string, unknown>;
 type CommonSimpleState = unknown;
+type CommonObjectState = Record<string, CommonSimpleState>;
 type Actions = Record<string, (payload: any) => AnyAction>;
 type SetFunctions<A extends Actions> = {
     [key in keyof A]: (value: A[key]) => void;
@@ -19,24 +19,48 @@ type Dux<S extends CommonObjectState | CommonSimpleState> = {
     dispatchContainer: DispatchContainer;
 };
 
-const dux = <S extends CommonObjectState>(
+const dux = <
+    S extends CommonObjectState,
+    E extends { [key: string]: Dux<any> } = { [key in never]: Dux<any> }
+>(
     name: string,
-    initialState: S
-): Dux<S> => {
+    initialState: S,
+    extraDuxes?: E
+): Dux<
+    S & {
+        [key in keyof E]: E[key] extends Dux<infer U> ? U : never;
+    }
+> => {
     const customDispatchContainer = {
         value: undefined
     } as unknown as DispatchContainer;
     const slice = createSlice({
         name,
         initialState,
-        reducers: createReducersByState(initialState)
+        reducers: createReducersByState(initialState),
+        extraReducers: builder => {
+            for (const key in extraDuxes) {
+                builder.addMatcher(
+                    ({ type }) =>
+                        type.startsWith(extraDuxes[key].slice.name) &&
+                        Object.keys(extraDuxes[key].slice.actions).includes(
+                            type.substring(
+                                extraDuxes[key].slice.name.length + 1
+                            )
+                        ),
+                    (state, action) => {
+                        extraDuxes[key].slice.reducer(state[key] as E, action);
+                    }
+                );
+            }
+        }
     });
     const setFunctions = createSetFunctionsByActions(
         slice.actions,
         customDispatchContainer
     );
     return {
-        slice,
+        slice: slice as any,
         setFunctions,
         dispatchContainer: customDispatchContainer
     };
@@ -54,7 +78,7 @@ const simpleDux = <S extends CommonSimpleState>(
         initialState,
         reducers: {
             // @ts-ignore
-            set: (state, action) => action.payload
+            set: (state, { payload }) => payload
         }
     });
     return {
@@ -76,9 +100,9 @@ const createReducersByState = <S extends CommonObjectState>(
     Object.fromEntries(
         Object.keys(initialState).map(key => [
             key as unknown,
-            (state, action) => {
+            (state, { payload }) => {
                 // @ts-ignore
-                state[key] = action.payload;
+                state[key] = payload;
             }
         ])
     );
