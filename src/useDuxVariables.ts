@@ -5,7 +5,7 @@ import { useSelector as defaultUseSelector } from 'react-redux';
 import { Dux, CommonObjectState, CommonSimpleState } from './dux';
 
 const useDuxVariables = <S extends CommonObjectState>(
-    dux: Dux<S>,
+    dux: Dux<S, any>,
     selector: (rootState: any) => S,
     {
         useSelector = defaultUseSelector,
@@ -31,7 +31,7 @@ const useDuxVariables = <S extends CommonObjectState>(
 };
 
 const useSimpleDuxVariables = <S extends CommonSimpleState>(
-    dux: Dux<S>,
+    dux: Dux<S, any>,
     selector: (rootState: any) => S,
     {
         useSelector = defaultUseSelector,

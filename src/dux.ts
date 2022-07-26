@@ -13,24 +13,48 @@ type Actions = Record<string, (payload: any) => AnyAction>;
 type SetFunctions<A extends Actions> = {
     [key in keyof A]: (value: A[key]) => void;
 };
-type Dux<S extends CommonObjectState | CommonSimpleState> = {
+type Dux<
+    S extends CommonObjectState | CommonSimpleState,
+    E extends { [key: string]: Dux<any, any> }
+> = {
     slice: Slice<S>;
     setFunctions: SetFunctions<Slice<S>['actions']>;
     dispatchContainer: DispatchContainer;
+    extraDuxes: E;
 };
 
 const dux = <
     S extends CommonObjectState,
-    E extends { [key: string]: Dux<any> } = { [key in never]: Dux<any> }
+    E extends { [key: string]: (name: string) => Dux<any, any> } = {
+        [key in never]: () => Dux<any, any>;
+    }
 >(
     name: string,
     initialState: S,
     extraDuxes?: E
 ): Dux<
     S & {
-        [key in keyof E]: E[key] extends Dux<infer U> ? U : never;
+        [key in keyof E]: ReturnType<E[key]> extends Dux<infer U, any>
+            ? U
+            : never;
+    },
+    {
+        [key in keyof E]: ReturnType<E[key]>;
     }
 > => {
+    let duxes: {
+        [key: string]: Dux<any, any>;
+    };
+    if (extraDuxes !== undefined) {
+        duxes = Object.fromEntries(
+            Object.keys(extraDuxes).map(key => [
+                key,
+                extraDuxes[key](name + '/' + key)
+            ])
+        );
+    } else {
+        duxes = {};
+    }
     const customDispatchContainer = {
         value: undefined
     } as unknown as DispatchContainer;
@@ -39,17 +63,15 @@ const dux = <
         initialState,
         reducers: createReducersByState(initialState),
         extraReducers: builder => {
-            for (const key in extraDuxes) {
+            for (const key in duxes) {
                 builder.addMatcher(
                     ({ type }) =>
-                        type.startsWith(extraDuxes[key].slice.name) &&
-                        Object.keys(extraDuxes[key].slice.actions).includes(
-                            type.substring(
-                                extraDuxes[key].slice.name.length + 1
-                            )
+                        type.startsWith(duxes[key].slice.name) &&
+                        Object.keys(duxes[key].slice.actions).includes(
+                            type.substring(duxes[key].slice.name.length + 1)
                         ),
                     (state, action) => {
-                        extraDuxes[key].slice.reducer(state[key] as E, action);
+                        duxes[key].slice.reducer(state[key] as E, action);
                     }
                 );
             }
@@ -62,14 +84,15 @@ const dux = <
     return {
         slice: slice as any,
         setFunctions,
-        dispatchContainer: customDispatchContainer
+        dispatchContainer: customDispatchContainer,
+        extraDuxes: duxes as any
     };
 };
 
 const simpleDux = <S extends CommonSimpleState>(
     name: string,
     initialState: S | (() => S)
-): Dux<S> => {
+): Dux<S, {}> => {
     const customDispatchContainer = {
         value: undefined
     } as unknown as DispatchContainer;
@@ -88,7 +111,8 @@ const simpleDux = <S extends CommonSimpleState>(
                 customDispatchContainer.value(slice.actions.set(value));
             }
         },
-        dispatchContainer: customDispatchContainer
+        dispatchContainer: customDispatchContainer,
+        extraDuxes: {}
     };
 };
 
