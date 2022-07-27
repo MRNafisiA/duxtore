@@ -1,23 +1,26 @@
-import { DispatchContainer } from './dispatch';
+import { dispatchContainer, DispatchContainer } from './dispatch';
+import { GetFullStateOfDux, GetFullVariablesOfDux } from './typeUtils';
+import { useSelector as defaultUseSelector } from 'react-redux/es/hooks/useSelector';
 import {
     AnyAction,
     createSlice,
+    Dispatch,
     Draft,
     PayloadAction,
     Slice
 } from '@reduxjs/toolkit';
+import { SimpleDux } from './simpleDux';
 
-type CommonSimpleState = unknown;
-type CommonObjectState = Record<string, CommonSimpleState>;
-type Actions = Record<string, (payload: any) => AnyAction>;
+type CommonObjectState = Record<string, unknown>;
+type Actions = Record<string, (payload: unknown) => AnyAction>;
 type SetFunctions<A extends Actions> = {
     [key in keyof A]: (value: A[key]) => void;
 };
 type Dux<
-    S extends CommonObjectState | CommonSimpleState,
-    E extends { [key: string]: Dux<any, any> }
+    S extends CommonObjectState,
+    E extends { [key: string]: Dux<any, any> | SimpleDux<any> }
 > = {
-    slice: Slice<S>;
+    slice: Slice<GetFullStateOfDux<S, E>>;
     setFunctions: SetFunctions<Slice<S>['actions']>;
     dispatchContainer: DispatchContainer;
     extraDuxes: E;
@@ -25,25 +28,23 @@ type Dux<
 
 const dux = <
     S extends CommonObjectState,
-    E extends { [key: string]: (name: string) => Dux<any, any> } = {
-        [key in never]: () => Dux<any, any>;
+    E extends {
+        [key: string]: (name: string) => Dux<any, any> | SimpleDux<any>;
+    } = {
+        [key in never]: () => Dux<any, any> | SimpleDux<any>;
     }
 >(
     name: string,
     initialState: S,
     extraDuxes?: E
 ): Dux<
-    S & {
-        [key in keyof E]: ReturnType<E[key]> extends Dux<infer U, any>
-            ? U
-            : never;
-    },
+    S,
     {
         [key in keyof E]: ReturnType<E[key]>;
     }
 > => {
     let duxes: {
-        [key: string]: Dux<any, any>;
+        [key: string]: Dux<any, any> | SimpleDux<any>;
     };
     if (extraDuxes !== undefined) {
         duxes = Object.fromEntries(
@@ -71,7 +72,7 @@ const dux = <
                             type.substring(duxes[key].slice.name.length + 1)
                         ),
                     (state, action) => {
-                        duxes[key].slice.reducer(state[key] as E, action);
+                        duxes[key].slice.reducer(state[key], action);
                     }
                 );
             }
@@ -86,33 +87,6 @@ const dux = <
         setFunctions,
         dispatchContainer: customDispatchContainer,
         extraDuxes: duxes as any
-    };
-};
-
-const simpleDux = <S extends CommonSimpleState>(
-    name: string,
-    initialState: S | (() => S)
-): Dux<S, {}> => {
-    const customDispatchContainer = {
-        value: undefined
-    } as unknown as DispatchContainer;
-    const slice = createSlice({
-        name,
-        initialState,
-        reducers: {
-            // @ts-ignore
-            set: (state, { payload }) => payload
-        }
-    });
-    return {
-        slice,
-        setFunctions: {
-            set: value => {
-                customDispatchContainer.value(slice.actions.set(value));
-            }
-        },
-        dispatchContainer: customDispatchContainer,
-        extraDuxes: {}
     };
 };
 
@@ -144,12 +118,65 @@ const createSetFunctionsByActions = <A extends Actions>(
         ])
     );
 
-export default dux;
-export { simpleDux, createReducersByState, createSetFunctionsByActions };
-export type {
-    CommonObjectState,
-    CommonSimpleState,
-    Actions,
-    SetFunctions,
-    Dux
+const useDuxVariables = <
+    S extends CommonObjectState,
+    E extends { [key: string]: Dux<any, any> | SimpleDux<any> }
+>(
+    dux: Dux<S, E>,
+    selector: (rootState: any) => GetFullStateOfDux<S, E>,
+    {
+        useSelector = defaultUseSelector,
+        dispatch = dispatchContainer.value
+    } = {} as {
+        useSelector?: (
+            selector: (rootState: any) => GetFullStateOfDux<S, E>
+        ) => GetFullStateOfDux<S, E>;
+        dispatch?: Dispatch;
+    }
+): GetFullVariablesOfDux<S, E> =>
+    getDuxVariables(dux, dispatch, useSelector(selector)) as any;
+
+const getDuxVariables = (
+    dux: Dux<any, any> | SimpleDux<any>,
+    dispatch: Dispatch,
+    state: CommonObjectState
+) => {
+    if (dux.dispatchContainer.value !== dispatch) {
+        dux.dispatchContainer.value = dispatch;
+    }
+    if (isSimpleDux(dux)) {
+        return {
+            v: state,
+            set: dux.setFunction
+        };
+    }
+    const variables: { [key: string]: any } = {};
+    for (const actionsKey in dux.slice.actions) {
+        variables[actionsKey] = {
+            v: state[actionsKey],
+            set: dux.setFunctions[actionsKey]
+        };
+    }
+    for (const duxKey in dux.extraDuxes) {
+        variables[duxKey] = getDuxVariables(
+            dux.extraDuxes[duxKey],
+            dispatch,
+            state[duxKey] as CommonObjectState
+        );
+    }
+    return variables;
 };
+
+const isSimpleDux = (
+    duxOrSimpleDux: Dux<any, any> | SimpleDux<any>
+): duxOrSimpleDux is SimpleDux<any> =>
+    (duxOrSimpleDux as Dux<any, any>).extraDuxes === undefined;
+
+export {
+    dux,
+    createReducersByState,
+    createSetFunctionsByActions,
+    useDuxVariables,
+    getDuxVariables
+};
+export type { CommonObjectState, Actions, SetFunctions, Dux };

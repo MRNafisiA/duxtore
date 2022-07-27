@@ -6,6 +6,5 @@ const initDispatch = (dispatch: Dispatch) => {
     dispatchContainer.value = dispatch;
 };
 
-export default dispatchContainer;
-export { initDispatch };
+export { dispatchContainer, initDispatch };
 export type { DispatchContainer };

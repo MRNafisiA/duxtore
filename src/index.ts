@@ -1,37 +1,30 @@
-import dispatchContainer, { initDispatch } from './dispatch';
-import useDuxVariables, { useSimpleDuxVariables } from './useDuxVariables';
-import Variable, {
-    GetValuesOfVariables,
-    GetVariablesOfState,
-    GetVariableType
-} from './Variable';
-import dux, {
-    Actions,
-    CommonObjectState,
-    CommonSimpleState,
-    simpleDux,
+export {
+    dux,
     createReducersByState,
     createSetFunctionsByActions,
-    Dux,
-    SetFunctions
-} from './dux';
-
-export { dispatchContainer, initDispatch };
-export {
+    useDuxVariables,
+    getDuxVariables,
     type CommonObjectState,
-    type CommonSimpleState,
     type Actions,
     type SetFunctions,
-    type Dux,
-    dux,
+    type Dux
+} from './dux';
+export {
     simpleDux,
-    createReducersByState,
-    createSetFunctionsByActions
-};
-export { useDuxVariables, useSimpleDuxVariables };
+    useSimpleDuxVariables,
+    type CommonSimpleState,
+    type SimpleDux
+} from './simpleDux';
+export {
+    dispatchContainer,
+    initDispatch,
+    type DispatchContainer
+} from './dispatch';
 export type {
     Variable,
     GetVariableType,
     GetValuesOfVariables,
-    GetVariablesOfState
-};
+    GetVariablesOfState,
+    GetFullVariablesOfDux,
+    GetFullStateOfDux
+} from './typeUtils';
