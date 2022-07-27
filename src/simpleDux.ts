@@ -1,7 +1,7 @@
 import { Variable } from './typeUtils';
 import { createSlice, Dispatch, Slice } from '@reduxjs/toolkit';
 import { dispatchContainer, DispatchContainer } from './dispatch';
-import { useSelector as defaultUseSelector } from 'react-redux/es/hooks/useSelector';
+import { useSelector as defaultUseSelector } from 'react-redux';
 
 type CommonSimpleState = unknown;
 type SimpleDux<S extends CommonSimpleState> = {

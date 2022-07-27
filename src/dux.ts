@@ -1,6 +1,6 @@
 import { dispatchContainer, DispatchContainer } from './dispatch';
 import { GetFullStateOfDux, GetFullVariablesOfDux } from './typeUtils';
-import { useSelector as defaultUseSelector } from 'react-redux/es/hooks/useSelector';
+import { useSelector as defaultUseSelector } from 'react-redux';
 import {
     AnyAction,
     createSlice,
@@ -61,7 +61,15 @@ const dux = <
     } as unknown as DispatchContainer;
     const slice = createSlice({
         name,
-        initialState,
+        initialState: {
+            ...initialState,
+            ...Object.fromEntries(
+                Object.entries(duxes).map(([key, val]) => [
+                    key,
+                    val.slice.getInitialState()
+                ])
+            )
+        },
         reducers: createReducersByState(initialState),
         extraReducers: builder => {
             for (const key in duxes) {
